@@ -4,3 +4,5 @@
 !**/.yarn/sdks
 !**/.yarn/versions
 .pnp.*
+www/js/*
+!www/js/jquery-*.min.js
