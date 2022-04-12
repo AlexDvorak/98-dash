@@ -93,7 +93,10 @@ export class NT {
         setTimeout(() => table.createSocket(window.location.host), 300);
     }
 
-    addGlobalListener(callback, notifyImmediately) {
+    addGlobalListener(
+        callback: (key: string, value: any, isNew: boolean) => void,
+        notifyImmediately: boolean
+    ) {
         this.globalListeners.add(callback);
 
         if (notifyImmediately === true) {
@@ -105,7 +108,11 @@ export class NT {
         };
     }
 
-    addKeyListener(key: NtKey, callback, notifyImmediately: boolean) {
+    addKeyListener(
+        key: NtKey,
+        callback: (k: string, v: any, isNew: boolean) => void,
+        notifyImmediately: boolean
+    ) {
         const listeners = this.keyListeners.get(key);
 
         if (listeners === undefined) {
@@ -124,7 +131,10 @@ export class NT {
         return () => this.keyListeners.get(key).delete(callback);
     }
 
-    addRobotConnectionListener(callback, notifyImmediately: boolean) {
+    addRobotConnectionListener(
+        callback: (robot_connected: boolean) => void,
+        notifyImmediately: boolean
+    ) {
         this.robotConnectionListeners.add(callback);
 
         if (notifyImmediately === true) {
@@ -134,7 +144,10 @@ export class NT {
         return () => this.robotConnectionListeners.delete(callback);
     }
 
-    addWsConnectionListener(callback, notifyImmediately: boolean) {
+    addWsConnectionListener(
+        callback: (ws_connected: boolean) => void,
+        notifyImmediately: boolean
+    ) {
         this.connectionListeners.add(callback);
 
         if (notifyImmediately === true) callback(this.socketOpen);
@@ -163,10 +176,6 @@ export class NT {
             /([;&,.+*~':"!^#$%@\[\]()=>|])/g,
             "\\$1"
         );
-    }
-
-    create_map() {
-        return new Map();
     }
 
     keyToId(key: NtKey) {
