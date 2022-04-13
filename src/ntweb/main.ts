@@ -15,28 +15,23 @@ class NtTable {
         this.subtables = new Set();
         this.entries = new Set();
         this.path = path;
-        this.name = path.slice(1).split("/").slice(-1)[0];
-        console.log(this.name);
+        this.name = path.slice(1).split("/").pop();
     }
 
-    get parent() {
-        return this.path.split("/")[-2];
+    get has_parent(): boolean {
+        return this.parent_name !== "";
     }
 
-    get parent_path() {
-        return this.path.split("/").slice(0, -1).join("/");
+    get parent_name(): string {
+        return this.path.split("/").slice(-2, -1)[0];
     }
 
-    addSubtable(t: NtTable) {
-        if (t.parent === this.name) {
-            this.subtables.add(t);
-        }
+    addSubtable(t: NtTable): void {
+        this.subtables.add(t);
     }
 
-    updateEntry(e: NtEntry) {
-        if (e.parent_path === this.name) {
-            this.entries.add(e);
-        }
+    updateEntry(e: NtEntry): void {
+        this.entries.add(e);
     }
 }
 
@@ -57,14 +52,24 @@ class NtEntry {
 let table = new NT(window.location.host);
 
 let tables = new Map<string, NtTable>();
+let entries = new Map<string, NtEntry>();
+
+function find_parent(
+    entry: NtEntry,
+    flatmap_tables: Map<string, NtTable> = tables
+): NtTable {
+    return flatmap_tables.get(entry.parent_path);
+}
 
 table.addGlobalListener((k: string, v: any, is_new: boolean) => {
     let e = new NtEntry(k, v);
-    if (!tables.has(e.parent_path)) {
-        let t = new NtTable(e.parent_path);
-        tables.set(t.path, t);
+    entries.set(k, e);
+
+    let parent_table = new NtTable(e.parent_path);
+    if (tables.has(parent_table.path)) {
+        tables.get(parent_table.path).updateEntry(e);
     } else {
-        tables.get(e.parent_path).updateEntry(e);
+        parent_table.updateEntry(e);
+        tables.set(parent_table.path, parent_table);
     }
-    console.log(tables);
-}, true);
+});

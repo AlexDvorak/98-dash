@@ -95,7 +95,7 @@ export class NT {
 
     addGlobalListener(
         callback: (key: string, value: any, isNew: boolean) => void,
-        notifyImmediately: boolean
+        notifyImmediately: boolean = true
     ) {
         this.globalListeners.add(callback);
 
@@ -111,7 +111,7 @@ export class NT {
     addKeyListener(
         key: NtKey,
         callback: (k: string, v: any, isNew: boolean) => void,
-        notifyImmediately: boolean
+        notifyImmediately: boolean = true
     ) {
         const listeners = this.keyListeners.get(key);
 
@@ -133,7 +133,7 @@ export class NT {
 
     addRobotConnectionListener(
         callback: (robot_connected: boolean) => void,
-        notifyImmediately: boolean
+        notifyImmediately: boolean = true
     ) {
         this.robotConnectionListeners.add(callback);
 
@@ -146,7 +146,7 @@ export class NT {
 
     addWsConnectionListener(
         callback: (ws_connected: boolean) => void,
-        notifyImmediately: boolean
+        notifyImmediately: boolean = true
     ) {
         this.connectionListeners.add(callback);
 
