@@ -5,10 +5,10 @@ const POW_2_24 = 5.960464477539063e-8,
 export function encode(value: any) {
     let data = new ArrayBuffer(256);
     let dataView = new DataView(data);
-    let lastLength;
+    let lastLength: number;
     let offset = 0;
 
-    function prepareWrite(length) {
+    function prepareWrite(length: number) {
         let newByteLength = data.byteLength;
         const requiredLength = offset + length;
         while (newByteLength < requiredLength) newByteLength <<= 1;
@@ -25,7 +25,7 @@ export function encode(value: any) {
         return dataView;
     }
 
-    function commitWrite() {
+    function commitWrite(__?: any) {
         offset += lastLength;
     }
 
@@ -37,22 +37,22 @@ export function encode(value: any) {
         commitWrite(prepareWrite(1).setUint8(offset, value));
     }
 
-    function writeUint8Array(value) {
+    function writeUint8Array(value: Uint8Array) {
         const dataView = prepareWrite(value.length);
         for (let i = 0; i < value.length; ++i)
             dataView.setUint8(offset + i, value[i]);
         commitWrite();
     }
 
-    function writeUint16(value) {
+    function writeUint16(value: number) {
         commitWrite(prepareWrite(2).setUint16(offset, value));
     }
 
-    function writeUint32(value) {
+    function writeUint32(value: number) {
         commitWrite(prepareWrite(4).setUint32(offset, value));
     }
 
-    function writeUint64(value) {
+    function writeUint64(value: number) {
         const low = value % POW_2_32;
         const high = (value - low) / POW_2_32;
         const dataView = prepareWrite(8);
@@ -61,7 +61,7 @@ export function encode(value: any) {
         commitWrite();
     }
 
-    function writeTypeAndLength(type, length) {
+    function writeTypeAndLength(type: number, length: number) {
         if (length < 24) {
             writeUint8((type << 5) | length);
         } else if (length < 0x100) {
@@ -79,9 +79,7 @@ export function encode(value: any) {
         }
     }
 
-    function encodeItem(value) {
-        let i;
-
+    function encodeItem(value: string | number | boolean | any[] | Uint8Array) {
         if (value === false) return writeUint8(0xf4);
         if (value === true) return writeUint8(0xf5);
         if (value === null) return writeUint8(0xf6);
@@ -99,8 +97,8 @@ export function encode(value: any) {
                 return writeFloat64(value);
 
             case "string":
-                const utf8data = [];
-                for (i = 0; i < value.length; ++i) {
+                const utf8data: number[] = [];
+                for (let i = 0; i < value.length; ++i) {
                     let charCode = value.charCodeAt(i);
                     if (charCode < 0x80) {
                         utf8data.push(charCode);
@@ -124,22 +122,21 @@ export function encode(value: any) {
                 }
 
                 writeTypeAndLength(3, utf8data.length);
-                return writeUint8Array(utf8data);
+                return writeUint8Array(new Uint8Array(utf8data));
 
             default:
-                let length;
                 if (Array.isArray(value)) {
-                    length = value.length;
+                    let length = value.length;
                     writeTypeAndLength(4, length);
-                    for (i = 0; i < length; ++i) encodeItem(value[i]);
+                    for (let i = 0; i < length; ++i) encodeItem(value[i]);
                 } else if (value instanceof Uint8Array) {
                     writeTypeAndLength(2, value.length);
                     writeUint8Array(value);
                 } else {
                     const keys = Object.keys(value);
-                    length = keys.length;
+                    let length = keys.length;
                     writeTypeAndLength(5, length);
-                    for (i = 0; i < length; ++i) {
+                    for (let i = 0; i < length; ++i) {
                         const key = keys[i];
                         encodeItem(key);
                         encodeItem(value[key]);
@@ -150,12 +147,12 @@ export function encode(value: any) {
 
     encodeItem(value);
 
-    if ("slice" in data) return data.slice(0, offset);
+    return data.slice(0, offset);
 
-    const ret = new ArrayBuffer(offset);
-    const retView = new DataView(ret);
-    for (let i = 0; i < offset; ++i) retView.setUint8(i, dataView.getUint8(i));
-    return ret;
+    // const ret = new ArrayBuffer(offset);
+    // const retView = new DataView(ret);
+    // for (let i = 0; i < offset; ++i) retView.setUint8(i, dataView.getUint8(i));
+    // return ret;
 }
 
 export function decode(data, tagger?, simpleValue?) {
