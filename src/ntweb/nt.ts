@@ -1,28 +1,28 @@
 import { encode, decode } from "./util.js";
 
-type NtKey = string;
+type NT_Key = string;
 
 export class NT {
     socket: WebSocket;
-    robotAddress: string;
-    robotConnected: boolean;
-    socketOpen: boolean;
-    connectionListeners: Set<any>;
-    robotConnectionListeners: Set<any>;
-    globalListeners: Set<any>;
-    keyListeners: Map<NtKey, any>;
-    ntCache: Map<NtKey, any>;
+    robot_addr: string;
+    robot_connected: boolean;
+    socket_open: boolean;
+    conn_listeners: Set<any>;
+    robot_conn_listeners: Set<any>;
+    global_listeners: Set<any>;
+    key_listeners: Map<NT_Key, any>;
+    cache: Map<NT_Key, any>;
 
     constructor(host: string) {
         this.socket = null;
-        this.robotAddress = null;
-        this.robotConnected = false;
-        this.socketOpen = false;
-        this.connectionListeners = new Set();
-        this.robotConnectionListeners = new Set();
-        this.globalListeners = new Set();
-        this.keyListeners = new Map();
-        this.ntCache = new Map();
+        this.robot_addr = null;
+        this.robot_connected = false;
+        this.socket_open = false;
+        this.conn_listeners = new Set();
+        this.robot_conn_listeners = new Set();
+        this.global_listeners = new Set();
+        this.key_listeners = new Map();
+        this.cache = new Map();
         if (host == undefined) host = window.location.host;
         this.createSocket(host);
     }
@@ -41,8 +41,8 @@ export class NT {
 
     onConnect(table: this) {
         console.info("Socket opened");
-        table.socketOpen = true;
-        table.connectionListeners.forEach((f) => f(true));
+        table.socket_open = true;
+        table.conn_listeners.forEach((f) => f(true));
     }
 
     onMessage(table: this, msg: MessageEvent<any>) {
@@ -50,24 +50,22 @@ export class NT {
 
         // robot connection event
         if (data.r !== undefined) {
-            table.robotConnected = data.r;
-            table.robotAddress = data.a;
-            table.robotConnectionListeners.forEach((f) =>
-                f(table.robotConnected)
-            );
+            table.robot_connected = data.r;
+            table.robot_addr = data.a;
+            table.robot_conn_listeners.forEach((f) => f(table.robot_connected));
         } else {
             // data changed on websocket
             const key = data["k"];
             const value = data["v"];
             const isNew = data["n"];
 
-            table.ntCache.set(key, value);
+            table.cache.set(key, value);
 
             // notify global listeners
-            table.globalListeners.forEach((f) => f(key, value, isNew));
+            table.global_listeners.forEach((f) => f(key, value, isNew));
 
             // notify key-specific listeners
-            const listeners = table.keyListeners.get(key);
+            const listeners = table.key_listeners.get(key);
             if (listeners !== undefined) {
                 listeners.forEach((f) => f(key, value, isNew));
             }
@@ -75,17 +73,17 @@ export class NT {
     }
 
     onDisconnect(table: this) {
-        if (table.socketOpen) {
-            table.connectionListeners.forEach((f) => f(false));
+        if (table.socket_open) {
+            table.conn_listeners.forEach((f) => f(false));
 
-            table.robotConnectionListeners.forEach((f) => f(false));
+            table.robot_conn_listeners.forEach((f) => f(false));
 
             // clear ntCache, it's no longer valid
-            table.ntCache = new Map();
+            table.cache = new Map();
 
-            table.socketOpen = false;
-            table.robotConnected = false;
-            table.robotAddress = null;
+            table.socket_open = false;
+            table.robot_connected = false;
+            table.robot_addr = null;
             console.info("Socket closed");
         }
 
@@ -97,10 +95,10 @@ export class NT {
         callback: (key: string, value: any, isNew: boolean) => void,
         notifyImmediately: boolean = true
     ) {
-        this.globalListeners.add(callback);
+        this.global_listeners.add(callback);
 
         if (notifyImmediately === true) {
-            this.ntCache.forEach((value, key) => callback(key, value, true));
+            this.cache.forEach((value, key) => callback(key, value, true));
         }
 
         return function unsubscribe() {
@@ -109,76 +107,76 @@ export class NT {
     }
 
     addKeyListener(
-        key: NtKey,
+        key: NT_Key,
         callback: (k: string, v: any, isNew: boolean) => void,
         notifyImmediately: boolean = true
     ) {
-        const listeners = this.keyListeners.get(key);
+        const listeners = this.key_listeners.get(key);
 
         if (listeners === undefined) {
-            this.keyListeners.set(key, new Set([callback]));
+            this.key_listeners.set(key, new Set([callback]));
         } else {
             listeners.add(callback);
         }
 
         if (notifyImmediately === true) {
-            const value = this.ntCache.get(key);
+            const value = this.cache.get(key);
             if (value !== undefined) {
                 callback(key, value, true);
             }
         }
 
-        return () => this.keyListeners.get(key).delete(callback);
+        return () => this.key_listeners.get(key).delete(callback);
     }
 
     addRobotConnectionListener(
         callback: (robot_connected: boolean) => void,
         notifyImmediately: boolean = true
     ) {
-        this.robotConnectionListeners.add(callback);
+        this.robot_conn_listeners.add(callback);
 
         if (notifyImmediately === true) {
-            callback(this.robotConnected);
+            callback(this.robot_connected);
         }
 
-        return () => this.robotConnectionListeners.delete(callback);
+        return () => this.robot_conn_listeners.delete(callback);
     }
 
     addWsConnectionListener(
         callback: (ws_connected: boolean) => void,
         notifyImmediately: boolean = true
     ) {
-        this.connectionListeners.add(callback);
+        this.conn_listeners.add(callback);
 
-        if (notifyImmediately === true) callback(this.socketOpen);
+        if (notifyImmediately === true) callback(this.socket_open);
 
-        return () => this.connectionListeners.delete(callback);
+        return () => this.conn_listeners.delete(callback);
     }
 
-    putValue(key: NtKey, value: any) {
-        if (!this.socketOpen) return false;
+    putValue<T>(key: NT_Key, value: T) {
+        if (!this.socket_open) return false;
 
         if (value === undefined)
-            throw new Error(key + ": 'undefined' passed to putValue");
+            throw new Error(`${key}: 'undefined' passed to putValue`);
 
         this.socket.send(encode({ k: key, v: value }));
         return true;
     }
 
-    getValue(key: NtKey, defaultValue: any) {
-        const val = this.ntCache.get(key);
+    getValue<T>(key: NT_Key, defaultValue: T): T {
+        const val = this.cache.get(key);
         if (val === undefined) return defaultValue;
         else return val;
     }
 
-    keySelector(str: string) {
-        return encodeURIComponent(str).replace(
+    keySelector(key: NT_Key): string {
+        return encodeURIComponent(key).replace(
             /([;&,.+*~':"!^#$%@\[\]()=>|])/g,
             "\\$1"
         );
     }
 
-    keyToId(key: NtKey) {
+    keyToId(key: NT_Key): string {
         return encodeURIComponent(key);
     }
 }
