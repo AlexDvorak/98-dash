@@ -8,11 +8,9 @@ if (!("WebSocket" in window)) {
 class NtTable {
     path: string;
     name: string;
-    subtables: Set<NtTable>;
     entries: Set<NtEntry>;
 
     constructor(path: string) {
-        this.subtables = new Set();
         this.entries = new Set();
         this.path = path;
         this.name = path.slice(1).split("/").pop();
@@ -26,12 +24,15 @@ class NtTable {
         return this.path.split("/").slice(-2, -1)[0];
     }
 
-    addSubtable(t: NtTable): void {
-        this.subtables.add(t);
-    }
-
     updateEntry(e: NtEntry): void {
-        this.entries.add(e);
+        let found_in_set = false;
+        this.entries.forEach((v) => {
+            if (v.key === e.key) {
+                v.value = e.value;
+                found_in_set = true;
+            }
+        });
+        if (!found_in_set) this.entries.add(e);
     }
 }
 
@@ -73,3 +74,48 @@ table.addGlobalListener((k: string, v: any, is_new: boolean) => {
         tables.set(parent_table.path, parent_table);
     }
 });
+
+function nt_path_to_id(nt_path: string): string {
+    return nt_path.slice(1).replace(/\//g, "_").replace(/ /g, "-");
+}
+
+function update_html_table(tables: Iterable<NtTable>) {
+    for (let t of tables) {
+        let table_id = nt_path_to_id(t.path);
+        let table = $("#" + table_id);
+
+        // create table if doesn't exists
+        console.debug(table, table_id);
+        if (document.getElementById(table_id) === null) {
+            $(`<h1>${t.name}</h1>`).appendTo("body");
+            $("<table></table>")
+                .attr("id", table_id)
+                .attr("border", 1)
+                .appendTo("body");
+        }
+
+        // populate it with the entries
+        for (let e of t.entries) {
+            let key_id = nt_path_to_id(e.key);
+
+            if (document.getElementById(`${key_id}`) === null) {
+                // create the row for the entry since it doesn't exist
+                let new_row = $("<tr></tr>").appendTo(`#${table_id}`);
+
+                // add the key and value pair into the row
+                $("<td></td>").text(e.key).appendTo(new_row);
+                $("<td></td>")
+                    .text(e.value)
+                    .attr("id", key_id)
+                    .appendTo(new_row);
+            } else {
+                // just update the cell with the new data
+                $("#" + key_id).text(e.value);
+            }
+        }
+    }
+}
+
+setInterval(() => {
+    update_html_table(tables.values());
+}, 3000);
