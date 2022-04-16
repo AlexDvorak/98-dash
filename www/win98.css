@@ -1,0 +1,51 @@
+* {
+    margin: 0 0 0 0;
+}
+body {
+    height: 100vh;
+    margin: none;
+}
+
+#screen {
+    height: 100%;
+    width: 100%;
+    display: grid;
+    grid-template-areas:
+        "desktop desktop desktop"
+        "start-menu taskbar timer";
+    grid-auto-rows: auto 40px;
+    grid-auto-columns: 110px auto 80px;
+}
+
+#desktop {
+    grid-area: desktop;
+    background: #008080;
+}
+
+#windows-button {
+    grid-area: start-menu;
+    max-width: fit-content;
+    height: 100%;
+    border: 1px solid black;
+}
+
+#sys-clock {
+    grid-area: timer;
+    color: black;
+    background-color: #c2c2c2;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.taskbar-entry {
+    height: 100%;
+    margin: auto;
+}
+
+#taskbar {
+    grid-area: taskbar;
+    background: #c2c2c2;
+    grid-row-start: 2;
+    grid-column-start: 1;
+}
