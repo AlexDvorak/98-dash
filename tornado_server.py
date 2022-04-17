@@ -8,41 +8,35 @@
     http://localhost:8888/ to view the index.html page.
 """
 
-from os.path import abspath, dirname, exists, join
+import logging
 from optparse import OptionParser
+from os.path import abspath, dirname, exists, join
 
 import tornado.web
+from networktables import NetworkTables
 from tornado.ioloop import IOLoop
 
-from networktables import NetworkTables
-from pynt2 import get_handlers, NonCachingStaticFileHandler
-
-import logging
-
-logger = logging.getLogger("dashboard")
-
-log_datefmt = "%H:%M:%S"
-log_format = "%(asctime)s:%(msecs)03d %(levelname)-8s: %(name)-20s: %(message)s"
+from pynt2 import NonCachingStaticFileHandler, get_handlers
 
 
-def init_networktables(options):
-    NetworkTables.setNetworkIdentity(options.identity)
+def init_networktables(conn_opts):
+    NetworkTables.setNetworkIdentity(conn_opts.identity)
 
-    if options.team:
-        logger.info("Connecting to NetworkTables for team %s", options.team)
-        NetworkTables.startClientTeam(options.team)
+    if conn_opts.team:
+        logger.info("Connecting to NetworkTables for team %s", conn_opts.team)
+        NetworkTables.startClientTeam(conn_opts.team)
     else:
-        logger.info("Connecting to networktables at %s", options.robot)
-        NetworkTables.initialize(server=options.robot)
+        logger.info("Connecting to networktables at %s", conn_opts.robot)
+        NetworkTables.initialize(server=conn_opts.robot)
 
-    if options.dashboard:
+    if conn_opts.dashboard:
         logger.info("Enabling driver station override mode")
         NetworkTables.startDSClient()
 
     logger.info("Networktables Initialized")
 
 
-def main():
+def read_opts():
     # Setup options here
     parser = OptionParser()
 
@@ -73,49 +67,63 @@ def main():
         "--identity", default="pynt2", help="Identity to send to NT server"
     )
 
-    options, args = parser.parse_args()
-
-    # Setup logging
-    logging.basicConfig(
-        datefmt=log_datefmt,
-        format=log_format,
-        level=logging.DEBUG if options.verbose else logging.INFO,
-    )
+    options, _ = parser.parse_args()
 
     if options.team and options.robot != "127.0.0.1":
         parser.error("--robot and --team are mutually exclusive")
+        exit(1)
+    else:
+        return options
 
+
+def get_relative_path(relative_path: str):
+    this_file_path = dirname(__file__)
+    joined_path = join(this_file_path, relative_path)
+    return abspath(joined_path)
+
+
+def run_server(logger, conn_opts):
     # Setup NetworkTables
-    init_networktables(options)
+    init_networktables(conn_opts)
 
     # setup tornado application with static handler + networktables support
-    www_dir = abspath(join(dirname(__file__), "www"))
-    main_html = join(www_dir, "main.html")
-    # ntjs_dir = abspath(join(join(dirname(__file__), "src"),"ntjs"))
-    # print(ntjs_dir)
+    default_page = get_relative_path("src/static/main.html")
+    www_dir = get_relative_path("src/static")
+    js_dir = get_relative_path("src/main")
 
     if not exists(www_dir):
         logger.error("Directory '%s' does not exist!", www_dir)
         exit(1)
 
-    if not exists(main_html):
-        logger.warn("%s not found", main_html)
+    if not exists(default_page):
+        logger.warn("%s not found", default_page)
 
     app = tornado.web.Application(
         get_handlers()
         + [
-            (r"/()", NonCachingStaticFileHandler, {"path": main_html}),
-            # (r"/networktables/(.*js)", NonCachingStaticFileHandler, {"path": ntjs_dir}),
+            (r"/()", NonCachingStaticFileHandler, {"path": default_page}),
             (r"/(.*)", NonCachingStaticFileHandler, {"path": www_dir}),
+            (r"/(lib/.*)", NonCachingStaticFileHandler, {"path": www_dir}),
+            (r"/(src/.*\.js)", NonCachingStaticFileHandler, {"path": js_dir}),
         ]
     )
 
     # Start the app
-    logger.info("Listening on http://localhost:%s/", options.port)
-
-    app.listen(options.port)
+    logger.info("Listening on http://localhost:%s/", conn_opts.port)
+    app.listen(conn_opts.port)
     IOLoop.current().start()
 
 
 if __name__ == "__main__":
-    main()
+    # Setup logging
+    log_datefmt = "%H:%M:%S"
+    log_format = "%(asctime)s:%(msecs)03d %(levelname)-8s: %(name)-20s: %(message)s"
+
+    logger = logging.getLogger("dashboard")
+    logging.basicConfig(
+        datefmt=log_datefmt,
+        format=log_format,
+        level=logging.DEBUG if conn_opts.verbose else logging.INFO,
+    )
+
+    run_server(logger, read_opts())
