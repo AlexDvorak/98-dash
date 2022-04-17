@@ -1,12 +1,5 @@
-import { NT, NtEntry, NtTable } from "./nt.js";
-// import "jquery";
-// import "jquery-ui";
+import { NT } from "./nt.js";
 
-interface AppWindow {
-    title: string;
-    register(nt: NT): void;
-    render(win: JQuery<HTMLElement>): JQuery<HTMLElement>;
-}
 /**
  * The goal of this is to keep track of its state internally
  * and render an HTMLElement from its state.
@@ -18,46 +11,76 @@ interface AppWindow {
  * instance and registers all its callbacks so that they can all add
  * their own callbacks for diff keys.
  */
-class App implements AppWindow {
+class App {
     title: string;
-    data_table: JQuery<HTMLElement>;
-    pipe: any;
+    private window: JQuery<HTMLElement>;
+    private render_ctxt: JQuery<HTMLElement>;
+    private uid: string;
 
-    constructor(title: string) {
+    constructor(title: string, uid: string = title) {
         this.title = title;
-        // this.data_table = $('<table')
+        this.uid = uid;
+        this.window = this.create_window();
+        this.window.appendTo("#desktop");
     }
 
-    register(nt: NT): void {
-        let t = this;
-        nt.addKeyListener("/limelight/pipeline", (k, v, is_new) => {
-            t.pipe = v as number;
+    private create_window(): JQuery<HTMLElement> {
+        let titlebar = $("<div></div>").addClass("app-titlebar").append(
+            $("<span></span>").text(this.title)
+            // $(""), // todo add buttons to titlebar
+        );
+        let content_space = $("<div></div>").addClass("app-content");
+        return $("<div></div>")
+            .addClass("app-window")
+            .attr("id", this.uid)
+            .resizable()
+            .draggable({
+                handle: ".app-titlebar",
+            })
+            .append(titlebar, content_space);
+    }
+
+    protected render_elem(data: JQuery<HTMLElement>) {
+        let content_area = this.window.children().filter(".app-content");
+        content_area.children().detach();
+        data.appendTo(content_area);
+    }
+}
+
+class SimpleDisplay extends App {
+    private value: any;
+    private key: string;
+
+    constructor(key: string, title: string = key) {
+        super(title, key.replace(/\//g, ""));
+        this.key = key;
+    }
+
+    register(nt: NT) {
+        const t = this;
+        nt.addKeyListener(this.key, (k, v, n) => {
+            t.value = v;
         });
     }
 
-    render(): JQuery<HTMLElement> {
-        return $("<h2>").text("Pipeline Active => " + this.pipe);
+    render() {
+        super.render_elem($("<h3>").text(this.value));
     }
 }
 
 $(function () {
     let nt = new NT();
-    let w = new App("Limelight Pipeline");
-    w.register(nt);
-    let app_win = $("#app-window");
-    $("#titlebar span").text(w.title);
-    $("#app-content").append(w.render());
+    let curr_pipe = new SimpleDisplay("/limelight/pipeline");
+    let selected_auto = new SimpleDisplay(
+        "/SmartDashboard/AutonChooser/active"
+    );
+    curr_pipe.register(nt);
+    selected_auto.register(nt);
 
-    let k;
-    app_win.resizable();
-    app_win.draggable({
-        handle: "#titlebar",
-        containment: $("#desktop"),
-    });
-    $("#close-win").on("click", (event) => (k = app_win.detach()));
-    $("#windows-button").on("click", (event) => $("#desktop").append(k));
-    function render() {
-        $("#app-content").html("").append(w.render());
+    function render_windows() {
+        curr_pipe.render();
+        selected_auto.render();
     }
-    setInterval(render, 1000);
+
+    setInterval(render_windows, 1000);
 });

@@ -50,23 +50,22 @@ body {
     grid-column-start: 1;
 }
 
-#app-window {
+.app-window {
     height: 100px;
     width: 100px;
-    background-color: red;
+    background-color: #c2c2c2;
     min-height: 50px;
     min-width: fit-content;
 }
 
-#titlebar {
+.app-titlebar {
     background-color: blue;
     width: 100%;
     height: 20px;
     color: white;
-    display: inline-block;
 }
 
-#app-content {
+.app-content {
     height: auto;
     width: 100%;
 }
