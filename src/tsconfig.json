@@ -1,11 +1,9 @@
 {
-  "compilerOptions": {
-    "module": "es2015",
-    "moduleResolution": "node",
-    "target": "es6",
-    "rootDirs": [
-      "ntweb/",
-    ],
-    "outDir": "../www/js/",
-  }
+    "compilerOptions": {
+        "module": "es2015",
+        "moduleResolution": "node",
+        "target": "es6",
+        "rootDirs": ["main"],
+        "outDir": "../www/src/"
+    }
 }

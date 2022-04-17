@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<link rel=stylesheet href=/css/win98.css>
+<link rel=stylesheet href=/css/jquery-ui.min.css>
+<body><div id=screen>
+
+    <div id=desktop>
+        <div id="app-window">
+            <div id="titlebar">
+                Title
+                <button id="close-win">X</button>
+            </div>
+            <div id="app-content"></div>
+        </div>
+    </div>
+
+    <div id=taskbar>
+        <div class='taskbar-entry'>
+            <button id='windows-button'>Start Menu</button>
+        </div>
+    </div>
+
+    <div id='sys-clock'>1:45 PM</div>
+
+</div></body>
+
+<script src="/lib/jquery-2.2.2.min.js"></script>
+<script src="/lib/jquery-ui-1.13.1.min.js"></script>
+
+<script>
+$(function() {
+    $('#app-window').resizable();
+    $('#app-window').draggable({
+        handle: "#titlebar"
+    });
+    $('#close-win').on(
+        "click", (event) => {
+            $('#app-window').detach();
+        }
+    )
+});
+</script>
+</html>

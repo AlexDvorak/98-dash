@@ -1,0 +1,18 @@
+#win1 {
+    margin: none;
+    width: 100px;
+    height: 100px;
+    background-color: red;
+}
+
+#titlebar {
+    height: 20px;
+    background-color: blue;
+    width: 100%;
+    padding: none;
+}
+
+#my-content {
+    width: 100%;
+    height: auto;
+}

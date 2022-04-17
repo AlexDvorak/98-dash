@@ -90,7 +90,7 @@ def main():
 
     # setup tornado application with static handler + networktables support
     www_dir = abspath(join(dirname(__file__), "www"))
-    index_html = join(www_dir, "index.html")
+    main_html = join(www_dir, "main.html")
     # ntjs_dir = abspath(join(join(dirname(__file__), "src"),"ntjs"))
     # print(ntjs_dir)
 
@@ -98,13 +98,13 @@ def main():
         logger.error("Directory '%s' does not exist!", www_dir)
         exit(1)
 
-    if not exists(index_html):
-        logger.warn("%s not found", index_html)
+    if not exists(main_html):
+        logger.warn("%s not found", main_html)
 
     app = tornado.web.Application(
         get_handlers()
         + [
-            (r"/()", NonCachingStaticFileHandler, {"path": index_html}),
+            (r"/()", NonCachingStaticFileHandler, {"path": main_html}),
             # (r"/networktables/(.*js)", NonCachingStaticFileHandler, {"path": ntjs_dir}),
             (r"/(.*)", NonCachingStaticFileHandler, {"path": www_dir}),
         ]

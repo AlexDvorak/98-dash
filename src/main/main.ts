@@ -1,5 +1,5 @@
 import { NT } from "./nt.js";
-import "./jquery-2.2.2.min.js";
+import "./jquery-2.2.2.min.js.js";
 
 if (!("WebSocket" in window)) {
     alert("Your browser does not support websockets, this will fail!");
