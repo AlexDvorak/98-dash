@@ -13,7 +13,7 @@ export class NT {
     key_listeners: Map<NT_Key, any>;
     cache: Map<NT_Key, any>;
 
-    constructor(host: string) {
+    constructor(host: string = window.location.host) {
         this.socket = null;
         this.robot_addr = null;
         this.robot_connected = false;
@@ -23,7 +23,6 @@ export class NT {
         this.global_listeners = new Set();
         this.key_listeners = new Map();
         this.cache = new Map();
-        if (host == undefined) host = window.location.host;
         this.createSocket(host);
     }
 
@@ -178,5 +177,56 @@ export class NT {
 
     keyToId(key: NT_Key): string {
         return encodeURIComponent(key);
+    }
+}
+export function find_parent(
+    entry: NtEntry,
+    flatmap_tables: Map<string, NtTable>
+): NtTable {
+    return flatmap_tables.get(entry.parent_path);
+}
+
+export class NtTable {
+    path: string;
+    name: string;
+    entries: Set<NtEntry>;
+
+    constructor(path: string) {
+        this.entries = new Set();
+        this.path = path;
+        this.name = path.slice(1).split("/").pop();
+    }
+
+    get has_parent(): boolean {
+        return this.parent_name !== "";
+    }
+
+    get parent_name(): string {
+        return this.path.split("/").slice(-2, -1)[0];
+    }
+
+    updateEntry(e: NtEntry): void {
+        let found_in_set = false;
+        this.entries.forEach((v) => {
+            if (v.key === e.key) {
+                v.value = e.value;
+                found_in_set = true;
+            }
+        });
+        if (!found_in_set) this.entries.add(e);
+    }
+}
+
+export class NtEntry {
+    key: string;
+    value: any;
+
+    constructor(key: string, value) {
+        this.key = key;
+        this.value = value;
+    }
+
+    get parent_path() {
+        return this.key.split("/").slice(0, -1).join("/");
     }
 }

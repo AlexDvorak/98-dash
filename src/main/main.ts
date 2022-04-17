@@ -1,66 +1,14 @@
-import { NT } from "./nt.js";
+import { NT, NtEntry, NtTable } from "./nt.js";
 import "/lib/jquery.min.js";
 
 if (!("WebSocket" in window)) {
     alert("Your browser does not support websockets, this will fail!");
 }
 
-class NtTable {
-    path: string;
-    name: string;
-    entries: Set<NtEntry>;
-
-    constructor(path: string) {
-        this.entries = new Set();
-        this.path = path;
-        this.name = path.slice(1).split("/").pop();
-    }
-
-    get has_parent(): boolean {
-        return this.parent_name !== "";
-    }
-
-    get parent_name(): string {
-        return this.path.split("/").slice(-2, -1)[0];
-    }
-
-    updateEntry(e: NtEntry): void {
-        let found_in_set = false;
-        this.entries.forEach((v) => {
-            if (v.key === e.key) {
-                v.value = e.value;
-                found_in_set = true;
-            }
-        });
-        if (!found_in_set) this.entries.add(e);
-    }
-}
-
-class NtEntry {
-    key: string;
-    value: any;
-
-    constructor(key: string, value) {
-        this.key = key;
-        this.value = value;
-    }
-
-    get parent_path() {
-        return this.key.split("/").slice(0, -1).join("/");
-    }
-}
-
 let table = new NT(window.location.host);
 
 let tables = new Map<string, NtTable>();
 let entries = new Map<string, NtEntry>();
-
-function find_parent(
-    entry: NtEntry,
-    flatmap_tables: Map<string, NtTable> = tables
-): NtTable {
-    return flatmap_tables.get(entry.parent_path);
-}
 
 table.addGlobalListener((k: string, v: any, is_new: boolean) => {
     let e = new NtEntry(k, v);
