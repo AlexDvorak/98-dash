@@ -28,6 +28,7 @@
 
 <script>
 $(function() {
+    let k;
     $('#app-window').resizable();
     $('#app-window').draggable({
         handle: "#titlebar",
@@ -35,7 +36,12 @@ $(function() {
     });
     $('#close-win').on(
         "click", (event) => {
-            $('#app-window').detach();
+            k = $('#app-window').detach();
+        }
+    )
+    $('#windows-button').on(
+        "click", (event) => {
+            $('#desktop').append(k);
         }
     )
 });

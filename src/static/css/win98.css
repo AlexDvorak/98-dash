@@ -54,6 +54,8 @@ body {
     height: 100px;
     width: 100px;
     background-color: red;
+    min-height: 50px;
+    min-width: fit-content;
 }
 
 #titlebar {
