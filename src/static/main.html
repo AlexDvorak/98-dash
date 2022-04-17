@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<link rel=stylesheet href=/css/win98.css>
 <link rel=stylesheet href=/css/jquery-ui.min.css>
+<link rel=stylesheet href=/css/win98.css>
 <body><div id=screen>
 
     <div id=desktop>
@@ -9,7 +9,7 @@
                 Title
                 <button id="close-win">X</button>
             </div>
-            <div id="app-content"></div>
+            <div id="app-content">Helo</div>
         </div>
     </div>
 
@@ -30,7 +30,8 @@
 $(function() {
     $('#app-window').resizable();
     $('#app-window').draggable({
-        handle: "#titlebar"
+        handle: "#titlebar",
+        containment: $("#screen"),
     });
     $('#close-win').on(
         "click", (event) => {

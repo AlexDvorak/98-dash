@@ -3,7 +3,7 @@
     "packageManager": "yarn@3.2.0",
     "type": "module",
     "scripts": {
-        "build": "yarn tsc; cp -r static/* ../www/",
+        "build": "cp -r static/* ../www/; yarn tsc",
         "serve": "cd ..; python tornado_server.py"
     },
     "dependencies": {
