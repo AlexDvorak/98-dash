@@ -6,10 +6,10 @@
     <div id=desktop>
         <div id="app-window">
             <div id="titlebar">
-                Title
+                <span>Title</span>
                 <button id="close-win">X</button>
             </div>
-            <div id="app-content">Helo</div>
+            <div id="app-content"></div>
         </div>
     </div>
 
@@ -25,25 +25,6 @@
 
 <script src="/lib/jquery.min.js"></script>
 <script src="/lib/jquery-ui.min.js"></script>
+<script src="/src/win.js" type="module"></script>
 
-<script>
-$(function() {
-    let k;
-    $('#app-window').resizable();
-    $('#app-window').draggable({
-        handle: "#titlebar",
-        containment: $("#screen"),
-    });
-    $('#close-win').on(
-        "click", (event) => {
-            k = $('#app-window').detach();
-        }
-    )
-    $('#windows-button').on(
-        "click", (event) => {
-            $('#desktop').append(k);
-        }
-    )
-});
-</script>
 </html>
