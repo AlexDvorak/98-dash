@@ -9,6 +9,7 @@
 """
 
 import logging
+from logging import Logger
 from optparse import OptionParser
 from os.path import abspath, dirname, exists, join
 
@@ -82,14 +83,14 @@ def get_relative_path(relative_path: str):
     return abspath(joined_path)
 
 
-def run_server(logger, conn_opts):
+def run_server(logger: Logger, conn_opts):
     # Setup NetworkTables
     init_networktables(conn_opts)
 
     # setup tornado application with static handler + networktables support
-    default_page = get_relative_path("src/static/main.html")
-    www_dir = get_relative_path("src/static")
-    js_dir = get_relative_path("src/main")
+    default_page = get_relative_path("www/main.html")
+    www_dir = get_relative_path("www")
+    # js_dir = get_relative_path("www/src")
 
     if not exists(www_dir):
         logger.error("Directory '%s' does not exist!", www_dir)
@@ -103,8 +104,6 @@ def run_server(logger, conn_opts):
         + [
             (r"/()", NonCachingStaticFileHandler, {"path": default_page}),
             (r"/(.*)", NonCachingStaticFileHandler, {"path": www_dir}),
-            (r"/(lib/.*)", NonCachingStaticFileHandler, {"path": www_dir}),
-            (r"/(src/.*\.js)", NonCachingStaticFileHandler, {"path": js_dir}),
         ]
     )
 
@@ -115,6 +114,8 @@ def run_server(logger, conn_opts):
 
 
 if __name__ == "__main__":
+    opts = read_opts()
+
     # Setup logging
     log_datefmt = "%H:%M:%S"
     log_format = "%(asctime)s:%(msecs)03d %(levelname)-8s: %(name)-20s: %(message)s"
@@ -123,7 +124,7 @@ if __name__ == "__main__":
     logging.basicConfig(
         datefmt=log_datefmt,
         format=log_format,
-        level=logging.DEBUG if conn_opts.verbose else logging.INFO,
+        level=logging.DEBUG if opts.verbose else logging.INFO,
     )
 
     run_server(logger, read_opts())
