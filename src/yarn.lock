@@ -5,12 +5,21 @@ __metadata:
   version: 6
   cacheKey: 8
 
-"@types/jquery@npm:^3.5.14":
+"@types/jquery@npm:*, @types/jquery@npm:^3.5.14":
   version: 3.5.14
   resolution: "@types/jquery@npm:3.5.14"
   dependencies:
     "@types/sizzle": "*"
   checksum: 159d6f804ed1a204b3f79f2d591a271d82e866bd45bd49fb6ef40561a25dbe0f47ec7815681b44cc2db5598425f72811e7e80ab0e983d980470998ac56feb375
+  languageName: node
+  linkType: hard
+
+"@types/jqueryui@npm:^1.12.16":
+  version: 1.12.16
+  resolution: "@types/jqueryui@npm:1.12.16"
+  dependencies:
+    "@types/jquery": "*"
+  checksum: a39a2b5c26a2b1341f50af49957b17a36423bdd6300c2a9188b1adc0d263f3e31255e8f2f77ffd59f750ede6cc713c84c9c88cdc6d43fa7d88949a40679f8a5e
   languageName: node
   linkType: hard
 
@@ -26,15 +35,26 @@ __metadata:
   resolution: "dash98@workspace:."
   dependencies:
     "@types/jquery": ^3.5.14
-    jquery: 2.2.2
+    "@types/jqueryui": ^1.12.16
+    jquery: ^3.6.0
+    jquery-ui: ^1.13.1
     typescript: ^4.6.3
   languageName: unknown
   linkType: soft
 
-"jquery@npm:2.2.2":
-  version: 2.2.2
-  resolution: "jquery@npm:2.2.2"
-  checksum: cee27f43d8e00ded82feaaec1a6dfc8270fc464ad8a3a9d4422dff19a3017924dbf62d0ed51d5fdfa561b484775210fc586dbf9b06a089a9781719c3243fadb1
+"jquery-ui@npm:^1.13.1":
+  version: 1.13.1
+  resolution: "jquery-ui@npm:1.13.1"
+  dependencies:
+    jquery: ">=1.8.0 <4.0.0"
+  checksum: 5eba4be23cad9a173b222a1a28c5126416209b3923ec5f0f83d85aaab385d567a23f3a399889b0f83dedfe13fafa55d32dc4deb9a13aa138cbca9a1b863fe4a1
+  languageName: node
+  linkType: hard
+
+"jquery@npm:>=1.8.0 <4.0.0, jquery@npm:^3.6.0":
+  version: 3.6.0
+  resolution: "jquery@npm:3.6.0"
+  checksum: 8fd5fef4aa48fd374ec716dd1c1df1af407814a228e15c1260ca140de3a697c2a77c30c54ff1d238b6a3ab4ddc445ddeef9adce6c6d28e4869d85eb9d3951c0e
   languageName: node
   linkType: hard
 

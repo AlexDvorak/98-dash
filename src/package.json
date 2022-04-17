@@ -7,10 +7,12 @@
         "serve": "cd ..; python tornado_server.py"
     },
     "dependencies": {
-        "jquery": "2.2.2"
+        "jquery": "^3.6.0",
+        "jquery-ui": "^1.13.1"
     },
     "devDependencies": {
         "@types/jquery": "^3.5.14",
+        "@types/jqueryui": "^1.12.16",
         "typescript": "^4.6.3"
     }
 }
