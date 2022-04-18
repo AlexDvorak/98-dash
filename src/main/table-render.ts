@@ -10,7 +10,7 @@ let table = new NT(window.location.host);
 let tables = new Map<string, NtTable>();
 let entries = new Map<string, NtEntry>();
 
-table.addGlobalListener((k: string, v: any, is_new: boolean) => {
+table.add_global_listener((k: string, v: any, is_new: boolean) => {
     const e = new NtEntry(k, v);
     entries.set(k, e);
 
@@ -23,7 +23,7 @@ table.addGlobalListener((k: string, v: any, is_new: boolean) => {
     }
 });
 
-table.addRobotConnectionListener((connected) => {
+table.add_robot_connection_listener((connected) => {
     if (connected) {
         $("#robot-state").text(`Connected @ ${table.robot_addr}`);
     } else {
@@ -31,7 +31,7 @@ table.addRobotConnectionListener((connected) => {
     }
 });
 
-table.addWsConnectionListener((ws_connected) => {
+table.add_ws_connection_listener((ws_connected) => {
     $("#connect-state").text(
         ws_connected ? "Connected to server" : "Disconnected from server"
     );

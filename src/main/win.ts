@@ -63,7 +63,7 @@ class SimpleDisplay extends App {
 
     register(nt: NT) {
         const t = this;
-        nt.addKeyListener(this.key, (k, v, n) => {
+        nt.add_key_listener(this.key, (k, v, n) => {
             t.value = v;
         });
     }
@@ -95,13 +95,13 @@ class Selectable extends App {
 
     register(nt: NT) {
         const t = this;
-        nt.addKeyListener(this.read_opts_from, (k, v, n) => {
+        nt.add_key_listener(this.read_opts_from, (k, v, n) => {
             this.opts = v as string[];
         });
     }
 
-    send(nt) {
-        nt.putValue(this.set_to, this.selected);
+    send(nt: NT) {
+        nt.put_value<string>(this.set_to, this.selected);
     }
 }
 
@@ -123,7 +123,7 @@ $(function () {
         for (let i of apps) {
             i.render();
         }
-        nt.putValue("/SmartDashboard/AutonChooser/selected", "Taxi Only");
+        nt.put_value("/SmartDashboard/AutonChooser/selected", "Taxi Only");
     }
 
     setInterval(render_windows, 100);

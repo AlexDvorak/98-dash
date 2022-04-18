@@ -1,17 +1,20 @@
 import { encode, decode } from "./util.js";
 
 type NT_Key = string;
+type KeyListener = (k: string, v: any, is_new: boolean) => void;
+type ConnectionListener = (connected: boolean) => void;
+type Unsubscriber = () => void;
 
 export class NT {
-    socket: WebSocket;
+    private socket: WebSocket;
     robot_addr: string;
     robot_connected: boolean;
     socket_open: boolean;
-    conn_listeners: Set<any>;
-    robot_conn_listeners: Set<any>;
-    global_listeners: Set<any>;
-    key_listeners: Map<NT_Key, any>;
-    cache: Map<NT_Key, any>;
+    private conn_listeners: Set<ConnectionListener>;
+    private robot_conn_listeners: Set<ConnectionListener>;
+    private global_listeners: Set<KeyListener>;
+    private key_listeners: Map<NT_Key, Set<KeyListener>>;
+    private cache: Map<NT_Key, any>;
 
     constructor(host: string = window.location.host) {
         this.socket = null;
@@ -26,7 +29,7 @@ export class NT {
         this.createSocket(host);
     }
 
-    createSocket(host: string) {
+    private createSocket(host: string): void {
         const address = `ws://${host}/networktables/ws`;
 
         this.socket = new WebSocket(address);
@@ -38,40 +41,40 @@ export class NT {
         }
     }
 
-    onConnect(table: this) {
+    private onConnect(table: this): void {
         console.info("Socket opened");
         table.socket_open = true;
         table.conn_listeners.forEach((f) => f(true));
     }
 
-    onMessage(table: this, msg: MessageEvent<any>) {
+    private onMessage(table: this, msg: MessageEvent<any>): void {
         const data = decode(msg.data);
 
         // robot connection event
         if (data.r !== undefined) {
-            table.robot_connected = data.r;
-            table.robot_addr = data.a;
+            table.robot_connected = data.r as boolean;
+            table.robot_addr = data.a as string;
             table.robot_conn_listeners.forEach((f) => f(table.robot_connected));
         } else {
             // data changed on websocket
-            const key = data["k"];
+            const key = data["k"] as string;
             const value = data["v"];
-            const isNew = data["n"];
+            const is_new = data["n"] as boolean;
 
             table.cache.set(key, value);
 
             // notify global listeners
-            table.global_listeners.forEach((f) => f(key, value, isNew));
+            table.global_listeners.forEach((f) => f(key, value, is_new));
 
             // notify key-specific listeners
             const listeners = table.key_listeners.get(key);
             if (listeners !== undefined) {
-                listeners.forEach((f) => f(key, value, isNew));
+                listeners.forEach((f) => f(key, value, is_new));
             }
         }
     }
 
-    onDisconnect(table: this) {
+    private onDisconnect(table: this): void {
         if (table.socket_open) {
             table.conn_listeners.forEach((f) => f(false));
 
@@ -90,27 +93,19 @@ export class NT {
         setTimeout(() => table.createSocket(window.location.host), 300);
     }
 
-    addGlobalListener(
-        callback: (key: string, value: any, isNew: boolean) => void,
-        notifyImmediately: boolean = true
-    ) {
+    add_global_listener(callback: KeyListener): Unsubscriber {
         this.global_listeners.add(callback);
 
-        if (notifyImmediately === true) {
-            this.cache.forEach((value, key) => callback(key, value, true));
-        }
+        this.cache.forEach((value, key) => callback(key, value, true));
 
-        return function unsubscribe() {
-            this.globalListeners.delete(callback);
-        };
+        return () => this.global_listeners.delete(callback);
     }
 
-    addKeyListener(
-        key: NT_Key,
-        callback: (k: string, v: any, isNew: boolean) => void,
-        notifyImmediately: boolean = true
-    ) {
+    add_key_listener(key: NT_Key, callback: KeyListener): Unsubscriber {
         const listeners = this.key_listeners.get(key);
+        const value = this.cache.get(key);
+
+        if (value !== undefined) callback(key, value, true);
 
         if (listeners === undefined) {
             this.key_listeners.set(key, new Set([callback]));
@@ -118,41 +113,22 @@ export class NT {
             listeners.add(callback);
         }
 
-        if (notifyImmediately === true) {
-            const value = this.cache.get(key);
-            if (value !== undefined) {
-                callback(key, value, true);
-            }
-        }
-
         return () => this.key_listeners.get(key).delete(callback);
     }
 
-    addRobotConnectionListener(
-        callback: (robot_connected: boolean) => void,
-        notifyImmediately: boolean = true
-    ) {
+    add_robot_connection_listener(callback: ConnectionListener): Unsubscriber {
         this.robot_conn_listeners.add(callback);
-
-        if (notifyImmediately === true) {
-            callback(this.robot_connected);
-        }
-
+        callback(this.robot_connected);
         return () => this.robot_conn_listeners.delete(callback);
     }
 
-    addWsConnectionListener(
-        callback: (ws_connected: boolean) => void,
-        notifyImmediately: boolean = true
-    ) {
+    add_ws_connection_listener(callback: ConnectionListener): Unsubscriber {
         this.conn_listeners.add(callback);
-
-        if (notifyImmediately === true) callback(this.socket_open);
-
+        callback(this.socket_open);
         return () => this.conn_listeners.delete(callback);
     }
 
-    putValue<T>(key: NT_Key, value: T) {
+    put_value<T>(key: NT_Key, value: T): boolean {
         if (!this.socket_open) return false;
 
         if (value === undefined)
@@ -162,28 +138,22 @@ export class NT {
         return true;
     }
 
-    getValue<T>(key: NT_Key, defaultValue: T): T {
+    get_value<T>(key: NT_Key, default_value: T): T {
         const val = this.cache.get(key);
-        if (val === undefined) return defaultValue;
+        if (val === undefined) return default_value;
         else return val;
     }
 
-    keySelector(key: NT_Key): string {
+    key_selector(key: NT_Key): string {
         return encodeURIComponent(key).replace(
             /([;&,.+*~':"!^#$%@\[\]()=>|])/g,
             "\\$1"
         );
     }
 
-    keyToId(key: NT_Key): string {
+    key_to_id(key: NT_Key): string {
         return encodeURIComponent(key);
     }
-}
-export function find_parent(
-    entry: NtEntry,
-    flatmap_tables: Map<string, NtTable>
-): NtTable {
-    return flatmap_tables.get(entry.parent_path);
 }
 
 export class NtTable {
