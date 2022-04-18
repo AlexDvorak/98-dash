@@ -17,7 +17,7 @@ import tornado.web
 from networktables import NetworkTables
 from tornado.ioloop import IOLoop
 
-from pynt2 import NonCachingStaticFileHandler, get_handlers
+from pynt2 import NonCachingStaticFileHandler, NetworkTablesWebSocket
 
 
 def init_networktables(conn_opts):
@@ -100,8 +100,8 @@ def run_server(logger: Logger, conn_opts):
         logger.warn("%s not found", default_page)
 
     app = tornado.web.Application(
-        get_handlers()
-        + [
+        [
+            ("/networktables/ws", NetworkTablesWebSocket),
             (r"/()", NonCachingStaticFileHandler, {"path": default_page}),
             (r"/(.*)", NonCachingStaticFileHandler, {"path": www_dir}),
         ]

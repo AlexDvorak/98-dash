@@ -21,10 +21,7 @@ from tornado.ioloop import IOLoop
 
 from . import get_handlers, NonCachingStaticFileHandler
 
-try:
-    from .version import __version__
-except ImportError:
-    __version__ = "__master__"
+__version__ = "__master__"
 
 import logging
 

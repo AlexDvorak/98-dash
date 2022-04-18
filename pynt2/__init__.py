@@ -22,7 +22,4 @@ except ImportError as e:
 else:
     from .aiohttp_handlers import networktables_websocket, nt2js_static_resources
 
-try:
-    from .version import __version__
-except ImportError:
-    __version__ = "__master__"
+__version__ = "__master__"
