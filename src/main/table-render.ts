@@ -23,8 +23,22 @@ table.addGlobalListener((k: string, v: any, is_new: boolean) => {
     }
 });
 
+table.addRobotConnectionListener((connected) => {
+    if (connected) {
+        $("#robot-state").text(`Connected @ ${table.robot_addr}`);
+    } else {
+        $("#robot-state").text("Not Connected");
+    }
+});
+
+table.addWsConnectionListener((ws_connected) => {
+    $("#connect-state").text(
+        ws_connected ? "Connected to server" : "Disconnected from server"
+    );
+});
+
 function nt_path_to_id(nt_path: string): string {
-    return nt_path.slice(1).replace(/\//g, "_").replace(/ /g, "-");
+    return nt_path.replace(/\//g, "_").replace(/ /g, "-").replace(/\./g, "_");
 }
 
 function update_html_table(tables: Iterable<NtTable>) {
@@ -33,7 +47,7 @@ function update_html_table(tables: Iterable<NtTable>) {
         let table = $("#" + table_id);
 
         // create table if doesn't exists
-        if (table.length === 0) {
+        if (!table.length) {
             $(`<h1>${t.name}</h1>`).appendTo("body");
             $("<table></table>")
                 .attr("id", table_id)
@@ -45,22 +59,40 @@ function update_html_table(tables: Iterable<NtTable>) {
         // populate it with the entries
         for (let entry of t.entries) {
             const key_id = nt_path_to_id(entry.key);
-            const entry_value_cell = $("#"+ key_id);
-
+            const entry_value_cell = $("#" + key_id);
             // create row for the entry if it doesn't exist
-            if (entry_value_cell.length === 0) {
+            if (!entry_value_cell.length) {
                 // create the row for the entry since it doesn't exist
                 const new_row = $("<tr></tr>").appendTo(table);
-
-                // add the key and value pair into the row
                 $("<td></td>").text(entry.key).appendTo(new_row);
-                $("<td></td>")
-                    .text(entry.value)
-                    .attr("id", key_id)
-                    .appendTo(new_row);
+
+                if (typeof entry.value === "boolean") {
+                    $("<td></td>")
+                        .attr({
+                            id: key_id,
+                            style: `background-color: ${
+                                entry.value ? "green" : "red"
+                            }`,
+                        })
+                        .appendTo(new_row);
+                } else {
+                    // add the key and value pair into the row
+                    $("<td></td>")
+                        .text(entry.value)
+                        .attr("id", key_id)
+                        .appendTo(new_row);
+                }
             } else {
-                // just update the cell with the new data
-                entry_value_cell.text(entry.value);
+                if (typeof entry.value === "boolean") {
+                    // just update the cell with the new data
+                    entry_value_cell.attr({
+                        style: `background-color: ${
+                            entry.value ? "green" : "red"
+                        }`,
+                    });
+                } else {
+                    entry_value_cell.text(entry.value);
+                }
             }
         }
     }

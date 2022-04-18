@@ -4,9 +4,15 @@
 <script src="/lib/jquery.min.js"></script>
 <script src="/src/table-render.js" type="module"></script>
 
+<style>
+td {
+    min-width: 20px;
+}
+</style>
+
 <div>
-	NetworkTables websocket: <span id="connectstate">Unknown state</span><br/>
-	Robot: <span id="robotstate">Unknown state</span> @ <span id="robotAddress">disconnected</span>
+	NetworkTables websocket: <span id="connect-state">Unknown state</span><br/>
+	Robot: <span id="robot-state">Not Connected</span>
 </div>
 
 </body>
