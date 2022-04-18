@@ -5,3 +5,4 @@
 !**/.yarn/versions
 .pnp.*
 www/**/*
+**/__pycache__/

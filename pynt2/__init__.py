@@ -8,18 +8,6 @@ except ImportError as e:
     logger.info(e)
     logger.info("Could not import tornado, disabling support.")
 else:
-    from .tornado_handlers import (
-        NetworkTablesWebSocket,
-        NonCachingStaticFileHandler,
-        get_handlers,
-    )
-
-try:
-    import aiohttp
-except ImportError as e:
-    logger.info(e)
-    logger.info("Could not import aiohttp, disabling support.")
-else:
-    from .aiohttp_handlers import networktables_websocket, nt2js_static_resources
+    from .tornado_handlers import NetworkTablesWebSocket, NonCachingStaticFileHandler
 
 __version__ = "__master__"

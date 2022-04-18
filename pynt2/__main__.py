@@ -9,8 +9,6 @@
         py -m pynt2
 """
 
-from __future__ import print_function
-
 import os
 from optparse import OptionParser
 from os.path import abspath, exists, join
@@ -19,7 +17,7 @@ import tornado.web
 from networktables import NetworkTables
 from tornado.ioloop import IOLoop
 
-from . import get_handlers, NonCachingStaticFileHandler
+from tornado_handlers import get_handlers, NonCachingStaticFileHandler
 
 __version__ = "__master__"
 
