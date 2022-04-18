@@ -1,4 +1,6 @@
-import { NT } from "./nt.js";
+import { NT, NtTable } from "./nt.js";
+import "/lib/jquery.min.js";
+import "/lib/jquery-ui.min.js";
 
 /**
  * The goal of this is to keep track of its state internally
@@ -13,9 +15,8 @@ import { NT } from "./nt.js";
  */
 class App {
     title: string;
-    private window: JQuery<HTMLElement>;
-    private render_ctxt: JQuery<HTMLElement>;
-    private uid: string;
+    public window: JQuery<HTMLElement>;
+    public uid: string;
 
     constructor(title: string, uid: string = title) {
         this.title = title;
@@ -32,12 +33,16 @@ class App {
         let content_space = $("<div></div>").addClass("app-content");
         return $("<div></div>")
             .addClass("app-window")
-            .attr("id", this.uid)
+            .attr({
+                id: this.uid,
+                style: "position: absolute;",
+            })
             .resizable()
             .draggable({
                 handle: ".app-titlebar",
             })
             .append(titlebar, content_space);
+        // TODO maybe don't stack them all ontop of each other?
     }
 
     protected render_elem(data: JQuery<HTMLElement>) {
@@ -68,19 +73,58 @@ class SimpleDisplay extends App {
     }
 }
 
-$(function () {
-    let nt = new NT();
-    let curr_pipe = new SimpleDisplay("/limelight/pipeline");
-    let selected_auto = new SimpleDisplay(
-        "/SmartDashboard/AutonChooser/active"
-    );
-    curr_pipe.register(nt);
-    selected_auto.register(nt);
+class Selectable extends App {
+    private selected: string;
+    private set_to: string;
+    private read_opts_from: string;
+    private opts: string[];
+    private dropdown: JQuery<HTMLElement>;
 
-    function render_windows() {
-        curr_pipe.render();
-        selected_auto.render();
+    constructor(table_read: NtTable) {
+        super("AUTO", "auton-selector");
+        this.dropdown = this.create_form([""]);
     }
 
-    setInterval(render_windows, 1000);
+    create_form(opts: string[]) {
+        let f = "<form><select id=" + this.uid + "-selector>";
+        for (let o of opts) {
+            f += "<option>" + o + "</option>";
+        }
+        return $(f + "</select></form>");
+    }
+
+    register(nt: NT) {
+        const t = this;
+        nt.addKeyListener(this.read_opts_from, (k, v, n) => {
+            this.opts = v as string[];
+        });
+    }
+
+    send(nt) {
+        nt.putValue(this.set_to, this.selected);
+    }
+}
+
+$(function () {
+    let nt = new NT();
+
+    let apps: SimpleDisplay[] = [];
+
+    for (let i = 0; i < 20; i++) {
+        let a = new SimpleDisplay(
+            "/SmartDashboard/AutonChooser/selected",
+            "LL-" + i
+        );
+        a.register(nt);
+        apps.push(a);
+    }
+
+    function render_windows() {
+        for (let i of apps) {
+            i.render();
+        }
+        nt.putValue("/SmartDashboard/AutonChooser/selected", "Taxi Only");
+    }
+
+    setInterval(render_windows, 100);
 });
