@@ -6,3 +6,4 @@
 .pnp.*
 www/**/*
 **/__pycache__/
+.vscode/
