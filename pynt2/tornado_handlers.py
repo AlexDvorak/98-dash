@@ -1,5 +1,5 @@
 from os.path import abspath, dirname, join
-
+from typing import Any
 from tornado.ioloop import IOLoop
 from tornado.web import StaticFileHandler
 from tornado.websocket import WebSocketHandler, WebSocketClosedError
@@ -19,7 +19,7 @@ class NetworkTablesWebSocket(WebSocketHandler):
     and a webpage via a websocket
     """
 
-    ntserial = None
+    ntserial: NTSerial | None = None
 
     def open(self):
         logger.info("NetworkTables websocket opened")
@@ -27,16 +27,14 @@ class NetworkTablesWebSocket(WebSocketHandler):
         self.ntserial = NTSerial(self.send_msg_threadsafe)
 
     def check_origin(self, origin):
-        """
-        Allow CORS requests
-        """
+        """Allow CORS requests"""
         return True
 
-    def on_message(self, message):
+    def on_message(self, message: bytes):
         if self.ntserial is not None:
             self.ntserial.process_update(message)
 
-    def send_msg(self, msg):
+    def send_msg(self, msg: bytes | str | dict[str, Any]):
         try:
             self.write_message(msg, binary=True)
         except WebSocketClosedError:

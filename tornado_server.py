@@ -127,4 +127,4 @@ if __name__ == "__main__":
         level=logging.DEBUG if opts.verbose else logging.INFO,
     )
 
-    run_server(logger, read_opts())
+    run_server(logger, opts)
