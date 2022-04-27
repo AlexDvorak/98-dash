@@ -26,7 +26,7 @@ class NetworkTablesWebSocket(WebSocketHandler):
         self.ioloop = IOLoop.current()
         self.ntserial = NTSerial(self.send_msg_threadsafe)
 
-    def check_origin(self, origin):
+    def check_origin(self, origin: str):
         """Allow CORS requests"""
         return True
 
@@ -56,10 +56,10 @@ class NonCachingStaticFileHandler(StaticFileHandler):
     """
 
     # This is broken in tornado, disable it
-    def check_etag_header(self):
+    def check_etag_header(self) -> bool:
         return False
 
-    def set_extra_headers(self, path):
+    def set_extra_headers(self, path: str):
         # Disable caching
         self.set_header(
             "Cache-Control", "no-store, no-cache, must-revalidate, max-age=0"
