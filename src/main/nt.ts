@@ -1,4 +1,4 @@
-import { encode, decode } from "./util.js";
+import { encode, decode } from "./cbor.js";
 
 type NT_Key = string;
 type KeyListener = (k: string, v: any, is_new: boolean) => void;

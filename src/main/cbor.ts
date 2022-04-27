@@ -8,9 +8,9 @@ export function encode(value: any) {
     let lastLength: number;
     let offset = 0;
 
-    function prepareWrite(length: number) {
-        let newByteLength = data.byteLength;
+    function prepareWrite(length: number): DataView {
         const requiredLength = offset + length;
+        let newByteLength = data.byteLength;
         while (newByteLength < requiredLength) newByteLength <<= 1;
         if (newByteLength !== data.byteLength) {
             const oldDataView = dataView;
@@ -25,16 +25,18 @@ export function encode(value: any) {
         return dataView;
     }
 
-    function commitWrite(__?: any) {
+    function commitWrite() {
         offset += lastLength;
     }
 
     function writeFloat64(value: number) {
-        commitWrite(prepareWrite(8).setFloat64(offset, value));
+        prepareWrite(8).setFloat64(offset, value);
+        commitWrite();
     }
 
     function writeUint8(value: number) {
-        commitWrite(prepareWrite(1).setUint8(offset, value));
+        prepareWrite(1).setUint8(offset, value);
+        commitWrite();
     }
 
     function writeUint8Array(value: Uint8Array) {
@@ -45,11 +47,13 @@ export function encode(value: any) {
     }
 
     function writeUint16(value: number) {
-        commitWrite(prepareWrite(2).setUint16(offset, value));
+        prepareWrite(2).setUint16(offset, value);
+        commitWrite();
     }
 
     function writeUint32(value: number) {
-        commitWrite(prepareWrite(4).setUint32(offset, value));
+        prepareWrite(4).setUint32(offset, value);
+        commitWrite();
     }
 
     function writeUint64(value: number) {
@@ -61,7 +65,16 @@ export function encode(value: any) {
         commitWrite();
     }
 
-    function writeTypeAndLength(type: number, length: number) {
+    const enum DataType {
+        POS_INT = 0,
+        NEG_INT = 1,
+        STRING = 3,
+        ARRAY = 4,
+        UINT8_ARRAY = 2,
+        OBJECT = 5,
+    }
+
+    function writeTypeAndLength(type: DataType, length: number) {
         if (length < 24) {
             writeUint8((type << 5) | length);
         } else if (length < 0x100) {
@@ -79,7 +92,9 @@ export function encode(value: any) {
         }
     }
 
-    function encodeItem(value: string | number | boolean | any[] | Uint8Array) {
+    function encodeItem(
+        value: string | number | boolean | any[] | Uint8Array | object
+    ) {
         if (value === false) return writeUint8(0xf4);
         if (value === true) return writeUint8(0xf5);
         if (value === null) return writeUint8(0xf6);
@@ -89,9 +104,12 @@ export function encode(value: any) {
             case "number":
                 if (Math.floor(value) === value) {
                     if (0 <= value && value <= POW_2_53)
-                        return writeTypeAndLength(0, value);
+                        return writeTypeAndLength(DataType.POS_INT, value);
                     if (-POW_2_53 <= value && value < 0)
-                        return writeTypeAndLength(1, -(value + 1));
+                        return writeTypeAndLength(
+                            DataType.NEG_INT,
+                            -(value + 1)
+                        );
                 }
                 writeUint8(0xfb);
                 return writeFloat64(value);
@@ -121,21 +139,21 @@ export function encode(value: any) {
                     }
                 }
 
-                writeTypeAndLength(3, utf8data.length);
+                writeTypeAndLength(DataType.STRING, utf8data.length);
                 return writeUint8Array(new Uint8Array(utf8data));
 
-            default:
+            default: // is object of some sort
                 if (Array.isArray(value)) {
                     let length = value.length;
-                    writeTypeAndLength(4, length);
+                    writeTypeAndLength(DataType.ARRAY, length);
                     for (let i = 0; i < length; ++i) encodeItem(value[i]);
                 } else if (value instanceof Uint8Array) {
-                    writeTypeAndLength(2, value.length);
+                    writeTypeAndLength(DataType.UINT8_ARRAY, value.length);
                     writeUint8Array(value);
                 } else {
                     const keys = Object.keys(value);
                     let length = keys.length;
-                    writeTypeAndLength(5, length);
+                    writeTypeAndLength(DataType.OBJECT, length);
                     for (let i = 0; i < length; ++i) {
                         const key = keys[i];
                         encodeItem(key);
