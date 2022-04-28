@@ -107,23 +107,19 @@ class Selectable extends App {
 
 $(function () {
     let nt = new NT();
-
     let apps: SimpleDisplay[] = [];
+    let id = 0;
 
-    for (let i = 0; i < 20; i++) {
-        let a = new SimpleDisplay(
-            "/SmartDashboard/AutonChooser/selected",
-            "LL-" + i
-        );
-        a.register(nt);
-        apps.push(a);
-    }
+    nt.add_global_listener((k, v, is_new) => {
+        if (is_new) {
+            let app = new SimpleDisplay(k, "wren-" + id++);
+            app.register(nt);
+            apps.push(app);
+        }
+    });
 
     function render_windows() {
-        for (let i of apps) {
-            i.render();
-        }
-        nt.put_value("/SmartDashboard/AutonChooser/selected", "Taxi Only");
+        apps.forEach((app) => app.render());
     }
 
     setInterval(render_windows, 100);
