@@ -14,9 +14,9 @@ import "/lib/jquery-ui.min.js";
  * their own callbacks for diff keys.
  */
 class App {
-    title: string;
-    public window: JQuery<HTMLElement>;
-    public uid: string;
+    private title: string;
+    protected window: JQuery<HTMLElement>;
+    protected uid: string;
 
     constructor(title: string, uid: string = title) {
         this.title = title;
@@ -28,7 +28,7 @@ class App {
     private create_window(): JQuery<HTMLElement> {
         let titlebar = $("<div></div>").addClass("app-titlebar").append(
             $("<span></span>").text(this.title)
-            // $(""), // todo add buttons to titlebar
+            // TODO add buttons to titlebar
         );
         let content_space = $("<div></div>").addClass("app-content");
         return $("<div></div>")
@@ -52,7 +52,16 @@ class App {
     }
 }
 
-class SimpleDisplay extends App {
+interface Nt_Input {
+    publish_input(nt: NT): void;
+}
+
+interface Nt_Renderable {
+    register(nt: NT): void;
+    render(): void;
+}
+
+class SimpleDisplay extends App implements Nt_Renderable {
     private value: any;
     private key: string;
 
@@ -63,7 +72,7 @@ class SimpleDisplay extends App {
 
     register(nt: NT) {
         const t = this;
-        nt.add_key_listener(this.key, (k, v, n) => {
+        nt.add_key_listener(this.key, (_k, v, _n) => {
             t.value = v;
         });
     }
@@ -73,54 +82,65 @@ class SimpleDisplay extends App {
     }
 }
 
-class Selectable extends App {
-    private selected: string;
-    private set_to: string;
-    private read_opts_from: string;
+class Selectable extends App implements Nt_Input, Nt_Renderable {
     private opts: string[];
-    private dropdown: JQuery<HTMLElement>;
+    private nt_selected: string;
+    private nt_default: string;
 
-    constructor(table_read: NtTable) {
+    private nt_opts_key: string;
+    private nt_selected_key: string;
+    private nt_default_key: string;
+
+    constructor(selector_table: NtTable) {
         super("AUTO", "auton-selector");
-        this.dropdown = this.create_form([""]);
+        this.nt_opts_key = selector_table.path + "/options";
+        this.nt_selected_key = selector_table.path + "/selected";
+        this.nt_default_key = selector_table.path + "/default";
     }
 
-    create_form(opts: string[]) {
-        let f = "<form><select id=" + this.uid + "-selector>";
-        for (let o of opts) {
-            f += "<option>" + o + "</option>";
-        }
+    private create_form(nt_default: string, opts: string[]) {
+        let f = `<form><select id='${this.uid}-selector'>`;
+        opts = opts !== undefined ? opts : [""];
+        opts.forEach((o) => {
+            const def_tagged = o == nt_default ? "selected" : "";
+            f += `<option ${def_tagged}>${o}</option>`;
+        });
         return $(f + "</select></form>");
     }
 
     register(nt: NT) {
         const t = this;
-        nt.add_key_listener(this.read_opts_from, (k, v, n) => {
-            this.opts = v as string[];
+        nt.add_key_listener(this.nt_opts_key, (_k, v, _n) => {
+            t.opts = v as string[];
+            console.log(t.opts);
+            t.render();
+        });
+        nt.add_key_listener(this.nt_selected_key, (k, v, n) => {
+            t.nt_selected = v;
+            t.render();
         });
     }
 
-    send(nt: NT) {
-        nt.put_value<string>(this.set_to, this.selected);
+    private user_selection(): string {
+        const selector = this.window
+            .find(`${this.uid}-selector`)
+            .get(0) as HTMLSelectElement;
+        return this.opts[selector.options.selectedIndex];
+    }
+
+    render() {
+        const dropdown = this.create_form(this.nt_selected, this.opts);
+        super.render_elem(dropdown);
+    }
+
+    publish_input(nt: NT) {
+        nt.put_value<string>(this.nt_selected, this.nt_selected);
     }
 }
 
 $(function () {
-    let nt = new NT();
-    let apps: SimpleDisplay[] = [];
-    let id = 0;
-
-    nt.add_global_listener((k, v, is_new) => {
-        if (is_new) {
-            let app = new SimpleDisplay(k, "wren-" + id++);
-            app.register(nt);
-            apps.push(app);
-        }
-    });
-
-    function render_windows() {
-        apps.forEach((app) => app.render());
-    }
-
-    setInterval(render_windows, 100);
+    const nt = new NT();
+    const auto_c = new Selectable(new NtTable("/SmartDashboard/AutonChooser"));
+    auto_c.register(nt);
+    auto_c.render();
 });
