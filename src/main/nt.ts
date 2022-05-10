@@ -61,15 +61,18 @@ export class NT {
             const value = data["v"];
             const is_new = data["n"] as boolean;
 
-            table.cache.set(key, value);
+            // only notify if data actually changed
+            if (table.cache.get(key) !== value) {
+                table.cache.set(key, value);
 
-            // notify global listeners
-            table.global_listeners.forEach((f) => f(key, value, is_new));
+                // notify global listeners
+                table.global_listeners.forEach((f) => f(key, value, is_new));
 
-            // notify key-specific listeners
-            const listeners = table.key_listeners.get(key);
-            if (listeners !== undefined) {
-                listeners.forEach((f) => f(key, value, is_new));
+                // notify key-specific listeners
+                const listeners = table.key_listeners.get(key);
+                if (listeners !== undefined) {
+                    listeners.forEach((f) => f(key, value, is_new));
+                }
             }
         }
     }
