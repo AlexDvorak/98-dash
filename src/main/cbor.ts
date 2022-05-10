@@ -176,7 +176,7 @@ export function encode(value: any) {
 export function decode(
     data: ArrayBuffer,
     tagger?: (value: any, len: number) => any,
-    simpleValue?: (arg0: any) => any
+    simpleValue?: (data_len?: number) => any
 ) {
     const dataView = new DataView(data);
     let offset = 0;
@@ -189,8 +189,7 @@ export function decode(
     }
 
     if (typeof simpleValue !== "function") {
-        // simpleValue = () => { return undefined };
-        simpleValue = function () {
+        simpleValue = (_?: number) => {
             return undefined;
         };
     }
@@ -273,7 +272,7 @@ export function decode(
         return length;
     }
 
-    function appendUtf16Data(utf16data: any[], length: number) {
+    function appendUtf16Data(utf16data: any[], length: number): void {
         for (let i = 0; i < length; ++i) {
             let value = readUint8();
             if (value & 0x80) {
@@ -307,6 +306,8 @@ export function decode(
     }
 
     const enum Type {
+        Uint = 0,
+        Int = 1,
         Utf8String = 2,
         Utf16String = 3,
         Array = 4,
@@ -335,14 +336,12 @@ export function decode(
         data_length = readLength(extra_info);
         if (data_length < 0 && (major_type < 2 || 6 < major_type))
             throw "Invalid length";
-        // length can only be -Inf to +Inf
-        // major_type can only be 0 to 7
 
-        switch (major_type) {
-            case 0:
+        switch (major_type as Type) {
+            case Type.Uint:
                 return data_length;
 
-            case 1:
+            case Type.Int:
                 return -1 - data_length;
 
             case Type.Utf8String:
